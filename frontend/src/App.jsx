@@ -1,59 +1,68 @@
 import { useState } from "react";
-import { ArrowLeft, Sparkles } from "lucide-react";
-import { Link, Route, Routes, useLocation } from "react-router-dom";
+import {
+  Navigate,
+  Outlet,
+  Route,
+  Routes,
+  useLocation,
+  useOutletContext,
+} from "react-router-dom";
 import Navbar from "./components/Navbar";
+import ProtectedRoute from "./components/ProtectedRoute";
+import RoleRoute from "./components/RoleRoute";
 import Sidebar from "./components/Sidebar";
+import { useAuth } from "./context/useAuth";
+import { Login, Signup } from "./pages/AuthPages";
 import Dashboard from "./pages/Dashboard";
+import Home from "./pages/Home";
+import {
+  AdminOverview,
+  AdminUsers,
+  PlaceholderPage,
+  Settings,
+} from "./pages/PlaceholderPages";
+import Expenses from "./pages/Expenses";
+import Savings from "./pages/Savings";
+import Transactions from "./pages/Transactions";
 
 const pageTitles = {
+  "/dashboard": "Dashboard",
   "/transactions": "Transactions",
+  "/expenses": "Expenses",
+  "/savings": "Savings",
   "/budgets": "Budgets",
   "/analytics": "Analytics",
   "/reports": "Reports",
-  "/assistant": "AI Assistant",
+  "/ai-assistant": "AI Assistant",
   "/settings": "Settings",
+  "/admin": "Admin overview",
+  "/admin/users": "Admin users",
 };
 
-function ComingSoon({ title }) {
-  return (
-    <div className="flex min-h-[60vh] items-center justify-center px-6 py-12">
-      <section className="w-full max-w-lg rounded-3xl border border-white bg-white p-10 text-center shadow-[0_16px_50px_rgba(54,48,105,0.08)]">
-        <div className="mx-auto mb-5 flex size-14 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-100 to-violet-100 text-violet-700">
-          <Sparkles size={25} />
-        </div>
-        <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-violet-600">
-          Coming soon
-        </p>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-          {title}
-        </h1>
-        <p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-slate-500">
-          This section is on the roadmap. Your expense overview is ready in the
-          meantime.
-        </p>
-        <Link
-          to="/"
-          className="mt-7 inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-violet-700"
-        >
-          <ArrowLeft size={16} />
-          Back to dashboard
-        </Link>
-      </section>
-    </div>
-  );
+function GuestRoute() {
+  const { token, user } = useAuth();
+  return token && user ? <Navigate to="/dashboard" replace /> : <Outlet />;
 }
 
-function App() {
+function ProtectedLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const location = useLocation();
+  const { user, logout } = useAuth();
   const title = pageTitles[location.pathname] ?? "Dashboard";
+
+  function handleLogout() {
+    logout();
+    setSidebarOpen(false);
+  }
 
   return (
     <div className="min-h-screen bg-[#f7f8fc] text-slate-900">
       <Sidebar
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
+        user={user}
+        onLogout={handleLogout}
       />
       <div className="min-h-screen min-w-0 lg:pl-[260px]">
         <Navbar
@@ -61,26 +70,68 @@ function App() {
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
           onMenuClick={() => setSidebarOpen(true)}
+          user={user}
+          onLogout={handleLogout}
         />
         <main className="mx-auto w-full max-w-[1600px] px-4 pb-10 pt-6 sm:px-6 lg:px-8 lg:pt-8">
-          <Routes>
-            <Route
-              path="/"
-              element={<Dashboard searchQuery={searchQuery} />}
-            />
-            {Object.entries(pageTitles).map(([path, pageTitle]) => (
-              <Route
-                key={path}
-                path={path}
-                element={<ComingSoon title={pageTitle} />}
-              />
-            ))}
-            <Route path="*" element={<ComingSoon title="Page not found" />} />
-          </Routes>
+          <Outlet context={{ searchQuery }} />
         </main>
       </div>
     </div>
   );
+}
+
+function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<Home />} />
+      <Route element={<GuestRoute />}>
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+      </Route>
+
+      <Route element={<ProtectedRoute />}>
+        <Route element={<ProtectedLayout />}>
+          <Route path="/dashboard" element={<DashboardRoute />} />
+          <Route path="/transactions" element={<TransactionsRoute />} />
+          <Route path="/expenses" element={<Expenses />} />
+          <Route path="/savings" element={<Savings />} />
+          <Route
+            path="/budgets"
+            element={<PlaceholderPage title="Budgets" />}
+          />
+          <Route
+            path="/analytics"
+            element={<PlaceholderPage title="Analytics" />}
+          />
+          <Route
+            path="/reports"
+            element={<PlaceholderPage title="Reports" />}
+          />
+          <Route
+            path="/ai-assistant"
+            element={<PlaceholderPage title="AI Assistant" />}
+          />
+          <Route path="/settings" element={<Settings />} />
+          <Route element={<RoleRoute allowedRoles={["admin"]} />}>
+            <Route path="/admin" element={<AdminOverview />} />
+            <Route path="/admin/users" element={<AdminUsers />} />
+          </Route>
+        </Route>
+      </Route>
+      <Route path="*" element={<PlaceholderPage title="Page not found" />} />
+    </Routes>
+  );
+}
+
+function DashboardRoute() {
+  const { searchQuery } = useOutletContext();
+  return <Dashboard searchQuery={searchQuery} />;
+}
+
+function TransactionsRoute() {
+  const { searchQuery } = useOutletContext();
+  return <Transactions searchQuery={searchQuery} />;
 }
 
 export default App;

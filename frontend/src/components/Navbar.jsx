@@ -1,15 +1,21 @@
 import { useState } from "react";
 import {
   Bell,
-  ChevronDown,
+  LogOut,
   Menu,
   Search,
   Sparkles,
 } from "lucide-react";
 
-function Navbar({ title, searchQuery, onSearchChange, onMenuClick }) {
+function Navbar({
+  title,
+  searchQuery,
+  onSearchChange,
+  onMenuClick,
+  user,
+  onLogout,
+}) {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
 
   return (
@@ -27,7 +33,9 @@ function Navbar({ title, searchQuery, onSearchChange, onMenuClick }) {
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <p className="truncate text-sm font-bold text-slate-900 sm:text-base">
-                {title === "Dashboard" ? "Welcome back, Sarah" : title}
+                {title === "Dashboard"
+                  ? `Welcome back, ${user?.fullName || "there"}`
+                  : title}
               </p>
               <Sparkles
                 size={15}
@@ -87,7 +95,6 @@ function Navbar({ title, searchQuery, onSearchChange, onMenuClick }) {
               type="button"
               onClick={() => {
                 setNotificationsOpen((open) => !open);
-                setProfileOpen(false);
               }}
               aria-label="Notifications"
               aria-expanded={notificationsOpen}
@@ -111,45 +118,30 @@ function Navbar({ title, searchQuery, onSearchChange, onMenuClick }) {
             )}
           </div>
 
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => {
-                setProfileOpen((open) => !open);
-                setNotificationsOpen(false);
-              }}
-              aria-expanded={profileOpen}
-              aria-label="Open profile menu"
-              className="flex items-center gap-2 rounded-xl p-1.5 pr-1 text-left transition hover:bg-slate-50"
-            >
-              <span className="flex size-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-violet-600 text-xs font-bold text-white shadow-sm shadow-violet-300/50">
-                SC
+          <div className="hidden min-w-0 items-center gap-2 sm:flex">
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-violet-600 text-xs font-bold text-white shadow-sm shadow-violet-300/50">
+              {user?.fullName?.charAt(0)?.toUpperCase() || "U"}
+            </span>
+            <span className="max-w-32">
+              <span className="block truncate text-xs font-semibold leading-4 text-slate-800">
+                {user?.fullName}
               </span>
-              <span className="hidden sm:block">
-                <span className="block text-xs font-semibold leading-4 text-slate-800">
-                  Sarah Chen
-                </span>
-                <span className="block text-[10px] leading-4 text-slate-500">
-                  Personal account
-                </span>
+              <span className="mt-0.5 inline-flex rounded-full bg-violet-50 px-2 py-0.5 text-[9px] font-semibold capitalize leading-3 text-violet-700">
+                {user?.role}
               </span>
-              <ChevronDown
-                size={14}
-                className="hidden text-slate-400 sm:block"
-              />
-            </button>
-            {profileOpen && (
-              <div className="absolute right-0 top-12 z-50 w-44 rounded-2xl border border-slate-100 bg-white p-2 shadow-xl shadow-slate-900/10">
-                <p className="px-3 py-2 text-xs font-semibold text-slate-500">
-                  Signed in as Sarah
-                </p>
-                <div className="h-px bg-slate-100" />
-                <p className="px-3 py-2 text-xs text-slate-600">
-                  Personal account
-                </p>
-              </div>
-            )}
+            </span>
           </div>
+          <button
+            type="button"
+            onClick={onLogout}
+            aria-label="Log out"
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 px-2.5 text-slate-600 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 sm:px-3"
+          >
+            <LogOut size={16} />
+            <span className="hidden text-xs font-semibold md:inline">
+              Log out
+            </span>
+          </button>
         </div>
       </div>
     </header>
