@@ -24,5 +24,5 @@ npm run build
 
 To try the dashboard interactions, use **Add expense**, search transactions,
 open **Upload statement** to select a local file, and use the sidebar or
-**View all transactions** link to navigate. Other navigation destinations are
-placeholders for future pages.
+**View all transactions** link to explore the transaction overview. The other
+site sections remain placeholders for future pages.
