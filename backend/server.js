@@ -1,9 +1,11 @@
+
 const express = require("express");
 const cors = require("cors");
 const authRoutes = require("./routes/authRoutes");
 const accountRoutes = require("./routes/accountRoutes");
 const budgetRoutes = require("./routes/budgetRoutes");
-
+const transactionRoutes = require("./routes/transactionRoutes");
+const importRoutes = require("./routes/importRoutes");
 
 require("dotenv").config();
 
@@ -17,6 +19,8 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/accounts", accountRoutes);
 app.use("/api/budgets", budgetRoutes);
+app.use("/api/transactions", transactionRoutes);
+app.use("/api/import", importRoutes);
 
 app.get("/", (req, res) => {
     res.send("AI Expense Analyser API Running");
