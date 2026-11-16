@@ -1,3 +1,4 @@
+
 const mongoose = require("mongoose");
 
 const budgetSchema = new mongoose.Schema({
@@ -24,6 +25,10 @@ const budgetSchema = new mongoose.Schema({
     year: {
         type: Number,
         required: true
+    },
+    lastAlertLevel: {
+        type: Number,
+        default: 0
     }
 }, { timestamps: true });
 

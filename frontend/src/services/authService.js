@@ -1,46 +1,56 @@
-function createMockUser(email, fullName) {
-  const normalizedEmail = email.trim().toLowerCase();
-  const role = normalizedEmail.includes("admin")
-    ? "admin"
-    : normalizedEmail.includes("premium")
-      ? "premium"
-      : "user";
-  const derivedName =
-    fullName?.trim() ||
-    normalizedEmail
-      .split("@")[0]
-      .split(/[._-]/)
-      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-      .join(" ");
+const API_URL = "http://localhost:5000/api/auth";
 
-  return {
-    id: normalizedEmail,
-    fullName: derivedName,
-    email: normalizedEmail,
-    role,
-  };
-}
+async function apiRequest(endpoint, body) {
+  const response = await fetch(`${API_URL}${endpoint}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
 
-function createMockSession(email, fullName) {
-  return {
-    token: `mock-token-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-    user: createMockUser(email, fullName),
-  };
-}
+  const data = await response.json();
 
-// TODO: Replace these mock implementations with POST /api/auth/login and POST /api/auth/register.
-export async function login(email, password) {
-  if (!email.trim() || !password) {
-    throw new Error("Email and password are required.");
+  if (!response.ok) {
+    throw new Error(data.message || "Something went wrong");
   }
 
-  return createMockSession(email);
+  return data;
+}
+
+function createSession(data) {
+  return {
+    token: data.token,
+    user: {
+      id: data.user.id,
+      name: data.user.name,
+      fullName: data.user.name,
+      email: data.user.email,
+      role: data.user.role || "user",
+    },
+  };
+}
+
+export async function login(email, password) {
+  const data = await apiRequest("/login", {
+    email,
+    password,
+  });
+
+  return createSession(data);
 }
 
 export async function signup(fullName, email, password) {
-  if (!fullName.trim() || !email.trim() || !password) {
-    throw new Error("Name, email, and password are required.");
-  }
+  await apiRequest("/register", {
+    name: fullName,
+    email,
+    password,
+  });
 
-  return createMockSession(email, fullName);
+  const data = await apiRequest("/login", {
+    email,
+    password,
+  });
+
+  return createSession(data);
 }
