@@ -1,4 +1,3 @@
-
 const API_URL = "http://localhost:5000/api/auth";
 
 async function apiRequest(endpoint, body) {
@@ -19,17 +18,39 @@ async function apiRequest(endpoint, body) {
   return data;
 }
 
-export async function registerUser(name, email, password) {
-  return apiRequest("/register", {
-    name,
-    email,
-    password,
-  });
+function createSession(data) {
+  return {
+    token: data.token,
+    user: {
+      id: data.user.id,
+      name: data.user.name,
+      fullName: data.user.name,
+      email: data.user.email,
+      role: data.user.role || "user",
+    },
+  };
 }
 
-export async function loginUser(email, password) {
-  return apiRequest("/login", {
+export async function login(email, password) {
+  const data = await apiRequest("/login", {
     email,
     password,
   });
+
+  return createSession(data);
+}
+
+export async function signup(fullName, email, password) {
+  await apiRequest("/register", {
+    name: fullName,
+    email,
+    password,
+  });
+
+  const data = await apiRequest("/login", {
+    email,
+    password,
+  });
+
+  return createSession(data);
 }

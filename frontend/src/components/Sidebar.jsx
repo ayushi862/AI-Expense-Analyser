@@ -4,7 +4,10 @@ import {
   ChartNoAxesCombined,
   ChevronRight,
   FileText,
+  LogOut,
   LayoutDashboard,
+  PiggyBank,
+  Receipt,
   Settings,
   Wallet,
   X,
@@ -12,14 +15,16 @@ import {
 import { NavLink } from "react-router-dom";
 
 const mainItems = [
-  { name: "Dashboard", path: "/", icon: LayoutDashboard },
+  { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
   { name: "Transactions", path: "/transactions", icon: ArrowLeftRight },
+  { name: "Expenses", path: "/expenses", icon: Receipt },
+  { name: "Savings", path: "/savings", icon: PiggyBank },
   { name: "Budgets", path: "/budgets", icon: Wallet },
   { name: "Analytics", path: "/analytics", icon: ChartNoAxesCombined },
   { name: "Reports", path: "/reports", icon: FileText },
 ];
 
-function Sidebar({ isOpen, onClose }) {
+function Sidebar({ isOpen, onClose, user, onLogout }) {
   return (
     <>
       {isOpen && (
@@ -37,7 +42,7 @@ function Sidebar({ isOpen, onClose }) {
       >
         <div className="mb-9 flex items-center justify-between px-2">
           <NavLink
-            to="/"
+            to="/dashboard"
             onClick={onClose}
             className="flex items-center gap-3"
             aria-label="AI Expense Analyser dashboard"
@@ -50,7 +55,7 @@ function Sidebar({ isOpen, onClose }) {
               />
             </span>
             <span className="text-[15px] font-bold leading-tight tracking-tight">
-              Spendwise
+              SpendDiary
               <span className="mt-1 block text-[10px] font-medium tracking-[0.16em] text-indigo-200/75">
                 AI EXPENSE ANALYSER
               </span>
@@ -74,7 +79,7 @@ function Sidebar({ isOpen, onClose }) {
             <NavLink
               key={name}
               to={path}
-              end={path === "/"}
+              end
               onClick={onClose}
               className={({ isActive }) =>
                 `group flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition duration-200 ${
@@ -99,7 +104,7 @@ function Sidebar({ isOpen, onClose }) {
         </p>
         <nav aria-label="Personal navigation" className="space-y-1">
           <NavLink
-            to="/assistant"
+            to="/ai-assistant"
             onClick={onClose}
             className={({ isActive }) =>
               `flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition ${
@@ -140,13 +145,34 @@ function Sidebar({ isOpen, onClose }) {
             Get a clearer picture of your spending with AI insights.
           </p>
           <NavLink
-            to="/assistant"
+            to="/ai-assistant"
             onClick={onClose}
             className="mt-3 inline-flex items-center gap-1 text-[11px] font-semibold text-violet-200 hover:text-white"
           >
             Explore AI
             <ChevronRight size={13} />
           </NavLink>
+        </div>
+        <div className="mt-4 flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] p-3">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-violet-600 text-xs font-bold text-white">
+            {user?.fullName?.charAt(0)?.toUpperCase() || "U"}
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-xs font-semibold text-white">
+              {user?.fullName}
+            </p>
+            <span className="mt-1 inline-flex rounded-full bg-violet-400/15 px-2 py-0.5 text-[9px] font-semibold capitalize text-violet-200">
+              {user?.role}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={onLogout}
+            aria-label="Log out"
+            className="rounded-lg p-2 text-slate-400 transition hover:bg-white/10 hover:text-white"
+          >
+            <LogOut size={16} />
+          </button>
         </div>
       </aside>
     </>
