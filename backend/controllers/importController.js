@@ -13,6 +13,12 @@ const previewImport = async (req, res) => {
             });
         }
 
+        if (!req.file.buffer || req.file.buffer.length === 0) {
+            return res.status(400).json({
+                message: "Uploaded CSV file is empty."
+            });
+        }
+
         const csvText = req.file.buffer.toString("utf8");
         const transactions = parseCsv(csvText);
 
@@ -23,8 +29,10 @@ const previewImport = async (req, res) => {
         });
 
     } catch (error) {
+        console.error("CSV Preview Error:", error.message);
+
         return res.status(400).json({
-            message: error.message
+            message: error.message || "Unable to process CSV file."
         });
     }
 };
@@ -46,7 +54,12 @@ const confirmImport = async (req, res) => {
             });
         }
 
-        // Verify that the account belongs to the logged-in user
+        if (!/^[0-9a-fA-F]{24}$/.test(accountId)) {
+            return res.status(400).json({
+                message: "Invalid account ID."
+            });
+        }
+
         const account = await Account.findOne({
             _id: accountId,
             user: req.user.id
@@ -60,7 +73,8 @@ const confirmImport = async (req, res) => {
 
         const validTransactions = [];
 
-        for (const transaction of transactions) {
+        for (let index = 0; index < transactions.length; index++) {
+            const transaction = transactions[index] || {};
             const { date, description, amount, type } = transaction;
 
             if (
@@ -72,7 +86,7 @@ const confirmImport = async (req, res) => {
                 !["debit", "credit"].includes(type)
             ) {
                 return res.status(400).json({
-                    message: "Invalid transaction data.",
+                    message: `Invalid transaction data at item ${index + 1}.`,
                     invalidTransaction: transaction
                 });
             }
@@ -81,7 +95,7 @@ const confirmImport = async (req, res) => {
 
             if (Number.isNaN(parsedDate.getTime())) {
                 return res.status(400).json({
-                    message: "Invalid transaction date.",
+                    message: `Invalid transaction date at item ${index + 1}.`,
                     invalidTransaction: transaction
                 });
             }
@@ -119,19 +133,37 @@ const confirmImport = async (req, res) => {
         return res.status(201).json({
             message: "Transactions imported successfully.",
             importedCount: result.length,
+            skippedCount: validTransactions.length - result.length,
             transactions: result
         });
 
     } catch (error) {
-        if (error.name === "BulkWriteError" || error.code === 11000) {
+        // Handle duplicate transaction errors
+        if (
+            error.code === 11000 ||
+            error.name === "BulkWriteError" ||
+            error.name === "MongoBulkWriteError"
+        ) {
+            const insertedCount =
+                error.result?.nInserted ??
+                error.insertedDocs?.length ??
+                0;
+
+            const totalCount = Array.isArray(req.body.transactions)
+                ? req.body.transactions.length
+                : 0;
+
             return res.status(200).json({
-                message: "Import completed. Some duplicate transactions may have been skipped.",
-                importedCount: error.result?.nInserted || 0
+                message: "Import completed. Duplicate transactions were skipped.",
+                importedCount: insertedCount,
+                skippedCount: Math.max(0, totalCount - insertedCount)
             });
         }
 
+        console.error("CSV Import Confirm Error:", error.message);
+
         return res.status(500).json({
-            message: error.message
+            message: "Unable to import transactions. Please try again."
         });
     }
 };
