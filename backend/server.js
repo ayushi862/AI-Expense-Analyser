@@ -10,6 +10,8 @@ const importRoutes = require("./routes/importRoutes");
 const categoryRoutes = require("./routes/categoryRoutes");
 const ruleRoutes = require("./routes/ruleRoutes");
 const analyticsRoutes = require("./routes/analyticsRoutes");
+const exportRoutes = require("./routes/exportRoutes");
+const reportRoutes = require("./routes/reportRoutes");
 
 require("dotenv").config();
 
@@ -28,6 +30,8 @@ app.use("/api/import", importRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/rules", ruleRoutes);
 app.use("/api/analytics", analyticsRoutes);
+app.use("/api/export", exportRoutes);
+app.use("/api/report", reportRoutes);
 
 app.get("/", (req, res) => {
     res.send("AI Expense Analyser API Running");
