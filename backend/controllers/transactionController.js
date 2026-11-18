@@ -113,8 +113,11 @@ const filterTransactions = async (req, res) => {
             };
         }
 
-        if (startDate && endDate &&
-            new Date(startDate) > new Date(endDate)) {
+        if (
+            startDate &&
+            endDate &&
+            new Date(startDate) > new Date(endDate)
+        ) {
             return res.status(400).json({
                 message: "Start date cannot be after end date"
             });
@@ -136,8 +139,63 @@ const filterTransactions = async (req, res) => {
     }
 };
 
+// MANUALLY MARK OR UNMARK TRANSFER
+const updateTransferStatus = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { isTransfer } = req.body;
+
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({
+                message: "Invalid transaction ID"
+            });
+        }
+
+        if (typeof isTransfer !== "boolean") {
+            return res.status(400).json({
+                message: "isTransfer must be true or false"
+            });
+        }
+
+        const transaction = await Transaction.findOneAndUpdate(
+            {
+                _id: id,
+                userId: req.user.id
+            },
+            {
+                $set: { isTransfer }
+            },
+            {
+                new: true,
+                runValidators: true
+            }
+        );
+
+        if (!transaction) {
+            return res.status(404).json({
+                message: "Transaction not found"
+            });
+        }
+
+        return res.status(200).json({
+            message: isTransfer
+                ? "Transaction marked as transfer successfully."
+                : "Transaction unmarked as transfer successfully.",
+            transaction
+        });
+
+    } catch (error) {
+        console.error("Transfer Update Error:", error);
+
+        return res.status(500).json({
+            message: "Failed to update transfer status."
+        });
+    }
+};
+
 module.exports = {
     getAllTransactions,
     getSingleTransaction,
-    filterTransactions
+    filterTransactions,
+    updateTransferStatus
 };
