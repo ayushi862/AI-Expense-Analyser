@@ -5,11 +5,15 @@ const router = express.Router();
 const authMiddleware = require("../middleware/authMiddleware");
 
 const {
+    createTransaction,
     getAllTransactions,
     getSingleTransaction,
     filterTransactions,
     updateTransferStatus
 } = require("../controllers/transactionController");
+
+// Create transaction
+router.post("/", authMiddleware, createTransaction);
 
 // Get all transactions
 router.get("/", authMiddleware, getAllTransactions);

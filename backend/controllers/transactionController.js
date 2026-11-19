@@ -1,6 +1,126 @@
 
 const mongoose = require("mongoose");
+const crypto = require("crypto");
+
 const Transaction = require("../models/Transaction");
+const Account = require("../models/Account");
+
+// CREATE TRANSACTION
+const createTransaction = async (req, res) => {
+    try {
+        const {
+            accountId,
+            date,
+            description,
+            merchant,
+            referenceNo,
+            amount,
+            type,
+            category,
+            subcategory
+        } = req.body;
+
+        if (
+            !accountId ||
+            !date ||
+            !description ||
+            amount === undefined ||
+            !type
+        ) {
+            return res.status(400).json({
+                message: "Required fields are missing"
+            });
+        }
+
+        if (!mongoose.Types.ObjectId.isValid(accountId)) {
+            return res.status(400).json({
+                message: "Invalid account ID"
+            });
+        }
+
+        if (!["debit", "credit"].includes(type)) {
+            return res.status(400).json({
+                message: "Type must be debit or credit"
+            });
+        }
+
+        if (
+            typeof amount !== "number" ||
+            !Number.isFinite(amount) ||
+            amount <= 0
+        ) {
+            return res.status(400).json({
+                message: "Amount must be a positive number"
+            });
+        }
+
+        const transactionDate = new Date(date);
+
+        if (Number.isNaN(transactionDate.getTime())) {
+            return res.status(400).json({
+                message: "Invalid transaction date"
+            });
+        }
+
+        const account = await Account.findOne({
+            _id: accountId,
+            user: req.user.id
+        });
+
+        if (!account) {
+            return res.status(404).json({
+                message: "Account not found"
+            });
+        }
+
+        const normalizedDescription = description.trim();
+
+        const dedupHash = crypto
+            .createHash("sha256")
+            .update([
+                req.user.id,
+                accountId,
+                transactionDate.toISOString(),
+                normalizedDescription.toLowerCase(),
+                amount,
+                type,
+                referenceNo || ""
+            ].join("|"))
+            .digest("hex");
+
+        const transaction = await Transaction.create({
+            userId: req.user.id,
+            accountId,
+            date: transactionDate,
+            description: normalizedDescription,
+            merchant: merchant || "",
+            referenceNo: referenceNo || "",
+            amount,
+            type,
+            category: category || null,
+            subcategory: subcategory || "",
+            dedupHash
+        });
+
+        return res.status(201).json({
+            message: "Transaction created successfully",
+            transaction
+        });
+
+    } catch (error) {
+        if (error.code === 11000) {
+            return res.status(409).json({
+                message: "Duplicate transaction already exists"
+            });
+        }
+
+        console.error("Create Transaction Error:", error);
+
+        return res.status(500).json({
+            message: "Failed to create transaction"
+        });
+    }
+};
 
 // GET ALL TRANSACTIONS
 const getAllTransactions = async (req, res) => {
@@ -71,6 +191,7 @@ const filterTransactions = async (req, res) => {
                     message: "Type must be debit or credit"
                 });
             }
+
             filter.type = type;
         }
 
@@ -80,6 +201,7 @@ const filterTransactions = async (req, res) => {
                     message: "Invalid category ID"
                 });
             }
+
             filter.category = category;
         }
 
@@ -194,6 +316,7 @@ const updateTransferStatus = async (req, res) => {
 };
 
 module.exports = {
+    createTransaction,
     getAllTransactions,
     getSingleTransaction,
     filterTransactions,
